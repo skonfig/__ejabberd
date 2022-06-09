@@ -18,7 +18,17 @@ None.
 
 OPTIONAL PARAMETERS
 -------------------
-None.
+password
+   the password to set for the user.
+
+   Required if ``--state present``
+state
+   One of:
+
+   ``present``
+      the user is present
+   ``absent``
+      the user is absent
 
 
 BOOLEAN PARAMETERS
@@ -31,8 +41,8 @@ EXAMPLES
 
 .. code-block:: sh
 
-   # TODO
-   __ssrq_ejabberd_user
+   # Create an admin user
+   __ssrq_ejabberd_user admin@example.com --password hunter2
 
 
 SEE ALSO

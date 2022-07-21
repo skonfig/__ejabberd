@@ -54,6 +54,21 @@ esac
 require=${ejabberd_require-} \
 __directory "${data_directory:?}" \
 	--owner ejabberd --group ejabberd --mode 0700
+# Set values in ejabberdctl.cfg
+
+while IFS='=' read -r _k _v
+do
+	require=${ejabberd_require-} \
+	__key_value "${ejabberdctl_cfg_path:?}:${_k}" \
+		--file "${ejabberdctl_cfg_path:?}" \
+		--delimiter '=' --exact_delimiter \
+		--key "${_k}" --value "${_v}" </dev/null
+done <<EOF
+POLL=true
+EJABBERD_CONFIG_PATH=${ejabberd_yml_path:?}
+EOF
+
+
 # Install ejabberd.yml configuration file
 config_source=$(cat "${__object:?}/parameter/config-source")
 if test "${config_source}" = '-'

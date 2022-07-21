@@ -29,6 +29,7 @@ breify() {
 
 if grep -q \
 	-e "^__file$(breify "${ejabberd_yml_path:?}")" \
+	-e "^__file$(breify "${ejabberdctl_cfg_path}")" \
 	"${__messages_in:?}"
 then
 	printf '%s\n' "${ejabberd_restart_cmd}"

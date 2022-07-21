@@ -5,6 +5,8 @@ os=$(cat "${__global:?}/explorer/os")
 case ${os}
 in
 	(debian|devuan|ubuntu)
+		# ejabberdctl_cfg_path=/etc/ejabberd/ejabberdctl.cfg
+		ejabberdctl_cfg_path=/etc/default/ejabberd
 		ejabberd_yml_path=/etc/ejabberd/ejabberd.yml
 
 		data_directory=/var/lib/ejabberd

@@ -3,12 +3,16 @@ cdist-type__ssrq_ejabberd_user(7)
 
 NAME
 ----
-cdist-type__ssrq_ejabberd_user - Manage ejabberd users
+cdist-type__ssrq_ejabberd_user - Manage XMPP accounts in ejabberd.
 
 
 DESCRIPTION
 -----------
-This space intentionally left blank.
+This cdist type can be used to register or unregister XMPP accounts in ejabberd.
+
+Please note that changing passwords is only supported if
+`mod_admin_extra <https://docs.ejabberd.im/admin/configuration/modules/#mod-admin-extra>`_
+is enabled in ejabberd's configuration.
 
 
 REQUIRED PARAMETERS

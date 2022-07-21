@@ -18,11 +18,30 @@
 # along with cdist. If not, see <http://www.gnu.org/licenses/>.
 #
 
+. "${__type:?}/files/common.sh"
 
-os=$(cat "${__global:?}/explorer/os")
 
-case ${os}
+case ${os:?}
 in
+	(debian|devuan|ubuntu)
+		# enable backports repo
+		# XXX: maybe the type should not be the one to decide whether or not to
+		# use backports
+		__apt_backports
+
+		read -r lsb_codename <"${__global:?}/explorer/lsb_codename"
+
+		require='__apt_backports __debconf_set_selections/ejabberd' \
+		__package_apt ejabberd --target-release "${lsb_codename:?}-backports"
+
+		ejabberd_require=${ejabberd_require-}${ejabberd_require:+ }__package_apt/ejabberd
+
+		require=__package_apt/ejabberd \
+		__directory /etc/ejabberd \
+			--owner 0 --group ejabberd --mode 0750
+
+		ejabberd_require=${ejabberd_require-}${ejabberd_require:+ }__directory/etc/ejabberd
+		;;
 	(*)
 		: "${__type:?}"  # make shellcheck happy
 		printf "Your operating system (%s) is currently not supported by this type (%s)\n" "${os}" "${__type##*/}" >&2
@@ -30,3 +49,23 @@ in
 		exit 1
 		;;
 esac
+
+# Manage ejabberd data directory
+require=${ejabberd_require-} \
+__directory "${data_directory:?}" \
+	--owner ejabberd --group ejabberd --mode 0700
+# Install ejabberd.yml configuration file
+config_source=$(cat "${__object:?}/parameter/config-source")
+if test "${config_source}" = '-'
+then
+	config_source=${__object:?}/stdin
+fi
+
+require=${ejabberd_require-} \
+__file "${ejabberd_yml_path:?}" \
+	--owner 0 --group ejabberd --mode 0640 \
+	--source "${config_source}"
+
+# Auto-start service
+require="__file${ejabberd_yml_path:?}" \
+__start_on_boot "${service_name:-ejabberd}"

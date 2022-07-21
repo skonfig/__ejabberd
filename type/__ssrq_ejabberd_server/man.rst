@@ -13,7 +13,8 @@ This space intentionally left blank.
 
 REQUIRED PARAMETERS
 -------------------
-None.
+config-source
+   local path to the ``ejabberd.yml`` file to install on the target.
 
 
 OPTIONAL PARAMETERS

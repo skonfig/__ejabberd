@@ -27,6 +27,10 @@ interface
    ``ERL_EPMD_ADDRESS`` will be set to this value.
 
    Defaults to: ``127.0.0.1`` (for security reasons in single-server setups)
+node-name
+   the name of the Erlang node.
+
+   Defaults to: ``ejabberd@localhost``
 
 
 BOOLEAN PARAMETERS

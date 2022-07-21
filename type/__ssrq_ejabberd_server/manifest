@@ -21,6 +21,7 @@
 . "${__type:?}/files/common.sh"
 
 read -r interface <"${__object:?}/parameter/interface"
+read -r node_name_should <"${__object:?}/parameter/node-name"
 
 case ${os:?}
 in
@@ -29,6 +30,10 @@ in
 		# XXX: maybe the type should not be the one to decide whether or not to
 		# use backports
 		__apt_backports
+
+		__debconf_set_selections ejabberd \
+			--line "ejabberd ejabberd/hostname string ${node_name_should}" \
+			--line 'ejabberd ejabberd/user string '
 
 		read -r lsb_codename <"${__global:?}/explorer/lsb_codename"
 

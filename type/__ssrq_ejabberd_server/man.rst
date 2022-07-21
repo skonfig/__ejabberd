@@ -19,7 +19,14 @@ config-source
 
 OPTIONAL PARAMETERS
 -------------------
-None.
+interface
+   the IP address of the interface ejabberd should listen on for internal
+   (cluster) communication.
+
+   The ``ejabberdctl.cfg`` variables ``INET_DIST_INTERFACE`` and
+   ``ERL_EPMD_ADDRESS`` will be set to this value.
+
+   Defaults to: ``127.0.0.1`` (for security reasons in single-server setups)
 
 
 BOOLEAN PARAMETERS

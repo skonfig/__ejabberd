@@ -20,6 +20,7 @@
 
 . "${__type:?}/files/common.sh"
 
+read -r interface <"${__object:?}/parameter/interface"
 
 case ${os:?}
 in
@@ -54,6 +55,36 @@ esac
 require=${ejabberd_require-} \
 __directory "${data_directory:?}" \
 	--owner ejabberd --group ejabberd --mode 0700
+
+# Ensure ejabberd internal communication and epmd are set to the correct
+# interface
+init=$(cat "${__global:?}/explorer/init")
+case ${init:?}
+in
+	(systemd)
+		require=${ejabberd_require-} \
+		__directory /etc/systemd/system/epmd.socket.d \
+			--owner 0 --group 0 --mode 0755
+		require=__directory/etc/systemd/system/epmd.socket.d \
+		__file /etc/systemd/system/epmd.socket.d/localhost-only.conf \
+			--owner 0 --group 0 --mode 0644 \
+			--onchange 'systemctl daemon-reload' \
+			--source - <<-EOF
+		[Socket]
+		ListenStream=
+		ListenStream=${interface}:4369
+		EOF
+		;;
+	(*)
+		require=${ejabberd_require-} \
+		__key_value "${ejabberdctl_cfg_path:?}:ERL_EPMD_ADDRESS" \
+			--file "${ejabberdctl_cfg_path:?}" \
+			--delimiter '=' --exact_delimiter \
+			--key 'ERL_EPMD_ADDRESS' --value "${interface:?}" \
+			--onchange "${ejabberd_stop_cmd}; epmd -kill || :; ${ejabberd_start_cmd}"
+		;;
+esac
+
 # Set values in ejabberdctl.cfg
 
 while IFS='=' read -r _k _v
@@ -66,6 +97,7 @@ do
 done <<EOF
 POLL=true
 EJABBERD_CONFIG_PATH=${ejabberd_yml_path:?}
+INET_DIST_INTERFACE=${interface:?}
 EOF
 
 

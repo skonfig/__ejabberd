@@ -20,8 +20,6 @@
 # Prints the current state of the user
 #
 
-set -x
-
 IFS=@ read -r username domain <<EOF
 ${__object_id:?}
 EOF

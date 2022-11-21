@@ -32,7 +32,7 @@ in
 		__apt_backports
 
 		__debconf_set_selections ejabberd \
-			--line "ejabberd ejabberd/hostname string ${node_name_should}" \
+			--line "ejabberd ejabberd/hostname string ${node_name_should#*@}" \
 			--line 'ejabberd ejabberd/user string '
 
 		read -r lsb_codename <"${__global:?}/explorer/lsb_codename"

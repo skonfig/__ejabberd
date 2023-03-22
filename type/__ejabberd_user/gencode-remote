@@ -1,0 +1,69 @@
+#!/bin/sh -e
+#
+# 2022 Dennis Camera (dennis.camera at ssrq-sds-fds.ch)
+#
+# This file is part of the skonfig set __ejabberd.
+#
+# This set is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This set is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this set. If not, see <http://www.gnu.org/licenses/>.
+#
+
+quote() { printf '%s\n' "$*" | sed "s/'/'\\\\''/g;1s/^/'/;\$s/\$/'/"; }
+
+read -r state_is <"${__object:?}/explorer/state"
+read -r state_should <"${__object:?}/parameter/state"
+
+IFS=@ read -r username domain <<EOF
+${__object_id:?}
+EOF
+
+test -n "${username}" -a -n "${domain}" || {
+	echo '__object_id must be a JID of the form user@domain.' >&2
+	exit 1
+}
+
+test "${state_is}" != "${state_should}" || exit 0
+
+case ${state_should}
+in
+	(present)
+		password=$(cat "${__object:?}/parameter/password")
+
+		case ${state_is}
+		in
+			(absent)
+				cmd='register'
+				;;
+			(wrongpassword)
+				cmd='change_password'
+				;;
+			(*)
+				printf 'state_is: %s\n' "${state_is}" >&2
+				exit 1
+				;;
+		esac
+
+		printf 'ejabberdctl %s %s %s %s\n' \
+			"${cmd}" \
+			"$(quote "${username}")" "$(quote "${domain}")" \
+			"$(quote "${password}")"
+		;;
+	(absent)
+		printf 'ejabberdctl unregister %s %s\n' \
+			"$(quote "${username}")" "$(quote "${domain}")"
+		;;
+	(*)
+		printf 'Invalid --state: %s\n' "${state_should}" >&2
+		exit 1
+		;;
+esac

@@ -1,0 +1,123 @@
+#!/bin/sh -e
+#
+# 2022 Dennis Camera (dennis.camera at ssrq-sds-fds.ch)
+#
+# This file is part of the skonfig set __ejabberd.
+#
+# This set is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This set is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this set. If not, see <http://www.gnu.org/licenses/>.
+#
+
+. "${__type:?}/files/common.sh"
+
+read -r interface <"${__object:?}/parameter/interface"
+read -r node_name_should <"${__object:?}/parameter/node-name"
+
+case ${os:?}
+in
+	(debian|devuan|ubuntu)
+		# enable backports repo
+		# XXX: maybe the type should not be the one to decide whether or not to
+		# use backports
+		__apt_backports
+
+		__debconf_set_selections ejabberd \
+			--line "ejabberd ejabberd/hostname string ${node_name_should#*@}" \
+			--line 'ejabberd ejabberd/user string '
+
+		read -r lsb_codename <"${__global:?}/explorer/lsb_codename"
+
+		require='__apt_backports __debconf_set_selections/ejabberd' \
+		__package_apt ejabberd --target-release "${lsb_codename:?}-backports"
+
+		ejabberd_require=${ejabberd_require-}${ejabberd_require:+ }__package_apt/ejabberd
+
+		require=__package_apt/ejabberd \
+		__directory /etc/ejabberd \
+			--owner 0 --group ejabberd --mode 0750
+
+		ejabberd_require=${ejabberd_require-}${ejabberd_require:+ }__directory/etc/ejabberd
+		;;
+	(*)
+		: "${__type:?}"  # make shellcheck happy
+		printf "Your operating system (%s) is currently not supported by this type (%s)\n" "${os}" "${__type##*/}" >&2
+		printf "Please contribute an implementation for it if you can.\n" >&2
+		exit 1
+		;;
+esac
+
+# Manage ejabberd data directory
+require=${ejabberd_require-} \
+__directory "${data_directory:?}" \
+	--owner ejabberd --group ejabberd --mode 0700
+
+# Ensure ejabberd internal communication and epmd are set to the correct
+# interface
+init=$(cat "${__global:?}/explorer/init")
+case ${init:?}
+in
+	(systemd)
+		require=${ejabberd_require-} \
+		__directory /etc/systemd/system/epmd.socket.d \
+			--owner 0 --group 0 --mode 0755
+		require=__directory/etc/systemd/system/epmd.socket.d \
+		__file /etc/systemd/system/epmd.socket.d/localhost-only.conf \
+			--owner 0 --group 0 --mode 0644 \
+			--onchange 'systemctl daemon-reload' \
+			--source - <<-EOF
+		[Socket]
+		ListenStream=
+		ListenStream=${interface}:4369
+		EOF
+		;;
+	(*)
+		require=${ejabberd_require-} \
+		__key_value "${ejabberdctl_cfg_path:?}:ERL_EPMD_ADDRESS" \
+			--file "${ejabberdctl_cfg_path:?}" \
+			--delimiter '=' --exact_delimiter \
+			--key 'ERL_EPMD_ADDRESS' --value "${interface:?}" \
+			--onchange "${ejabberd_stop_cmd}; epmd -kill || :; ${ejabberd_start_cmd}"
+		;;
+esac
+
+# Set values in ejabberdctl.cfg
+
+while IFS='=' read -r _k _v
+do
+	require=${ejabberd_require-} \
+	__key_value "${ejabberdctl_cfg_path:?}:${_k}" \
+		--file "${ejabberdctl_cfg_path:?}" \
+		--delimiter '=' --exact_delimiter \
+		--key "${_k}" --value "${_v}" </dev/null
+done <<EOF
+POLL=true
+EJABBERD_CONFIG_PATH=${ejabberd_yml_path:?}
+INET_DIST_INTERFACE=${interface:?}
+EOF
+
+
+# Install ejabberd.yml configuration file
+config_source=$(cat "${__object:?}/parameter/config-source")
+if test "${config_source}" = '-'
+then
+	config_source=${__object:?}/stdin
+fi
+
+require=${ejabberd_require-} \
+__file "${ejabberd_yml_path:?}" \
+	--owner 0 --group ejabberd --mode 0640 \
+	--source "${config_source}"
+
+# Auto-start service
+require="__file${ejabberd_yml_path:?}" \
+__start_on_boot "${service_name:-ejabberd}"

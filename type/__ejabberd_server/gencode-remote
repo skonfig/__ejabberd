@@ -1,0 +1,56 @@
+#!/bin/sh -e
+#
+# 2022 Dennis Camera (dennis.camera at ssrq-sds-fds.ch)
+#
+# This file is part of the skonfig set __ejabberd.
+#
+# This set is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This set is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this set. If not, see <http://www.gnu.org/licenses/>.
+#
+
+. "${__type:?}/files/common.sh"
+
+
+breify() {
+	# Convert arguments to a POSIX BRE-compatible form, i.e. escape special
+	# characters (incl. delimiter)
+	printf '%s' "$*" | sed -e 's/[].^$*\[]/\\&/g' -e 's:/:\\/:g'
+}
+
+
+read -r erl_node_is <"${__object:?}/explorer/node-name" || :
+read -r erl_node_should <"${__object:?}/parameter/node-name"
+
+if ! expr "${erl_node_should}" : '[^@]\{1,\}@.' >/dev/null
+then
+	printf 'Invalid --node-name: %s\n' "${erl_node_should}" >&2
+	printf 'It must be of the form node@hostname.\n' >&2
+	exit 1
+fi
+
+if test -n "${erl_node_is}" -a "${erl_node_is}" != "${erl_node_should}"
+then
+	printf \
+		'failure: the current Erlang node name is "%s", but should be "%s".\nThis process is currently not automated, please follow https://docs.ejabberd.im/admin/guide/managing/#change-computer-hostname manually, update %s and re-run cdist.' \
+		"${erl_node_is}" "${erl_node_should}" \
+		"${ejabberdctl_cfg_path:?}" >&2
+	exit 1
+fi
+
+if grep -q \
+	-e "^__file$(breify "${ejabberd_yml_path:?}")" \
+	-e "^__file$(breify "${ejabberdctl_cfg_path}")" \
+	"${__messages_in:?}"
+then
+	printf '%s\n' "${ejabberd_restart_cmd}"
+fi

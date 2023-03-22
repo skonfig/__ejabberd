@@ -1,0 +1,46 @@
+#!/bin/sh -e
+#
+# 2022 Dennis Camera (dennis.camera at ssrq-sds-fds.ch)
+#
+# This file is part of the skonfig set __ejabberd.
+#
+# This set is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This set is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this set. If not, see <http://www.gnu.org/licenses/>.
+#
+# Prints the current state of the user
+#
+
+IFS=@ read -r username domain <<EOF
+${__object_id:?}
+EOF
+
+command -v ejabberdctl >/dev/null 2>&1 || {
+	echo absent
+	exit 0
+}
+
+if ejabberdctl registered_users "${domain:?}" | grep -qxF "${username}"
+then
+	# NOTE: the check_password command requires mod_admin_extra to be enabled.
+	#       If the module is not enabled, assume the password is correct,
+	#       because it cannot be verified.
+	if _out=$(ejabberdctl check_password "${username}" "${domain}" "$(cat "${__object:?}/parameter/password")" 2>&1) \
+		|| expr "${_out}" : '.*unknown command' >/dev/null
+	then
+		echo present
+	else
+		echo wrongpassword
+	fi
+else
+	echo absent
+fi

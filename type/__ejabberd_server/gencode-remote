@@ -24,7 +24,7 @@
 breify() {
 	# Convert arguments to a POSIX BRE-compatible form, i.e. escape special
 	# characters (incl. delimiter)
-	printf '%s' "$*" | sed -e 's/[].^$*\[]/\\&/g' -e 's:/:\\/:g'
+	printf '%s' "$*" | sed -e 's/[].^$*\[]/\\&/g'
 }
 
 

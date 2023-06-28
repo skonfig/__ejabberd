@@ -1,6 +1,6 @@
 #!/bin/sh -e
 #
-# 2022 Dennis Camera (dennis.camera at ssrq-sds-fds.ch)
+# 2022-2023 Dennis Camera (dennis.camera at riiengineering.ch)
 #
 # This file is part of the skonfig set __ejabberd.
 #
@@ -26,19 +26,12 @@ read -r node_name_should <"${__object:?}/parameter/node-name"
 case ${os:?}
 in
 	(debian|devuan|ubuntu)
-		# enable backports repo
-		# XXX: maybe the type should not be the one to decide whether or not to
-		# use backports
-		__apt_backports
-
 		__debconf_set_selections ejabberd \
 			--line "ejabberd ejabberd/hostname string ${node_name_should#*@}" \
 			--line 'ejabberd ejabberd/user string '
 
-		read -r lsb_codename <"${__global:?}/explorer/lsb_codename"
-
-		require='__apt_backports __debconf_set_selections/ejabberd' \
-		__package_apt ejabberd --target-release "${lsb_codename:?}-backports"
+		require=__debconf_set_selections/ejabberd \
+		__package_apt ejabberd
 
 		ejabberd_require=${ejabberd_require-}${ejabberd_require:+ }__package_apt/ejabberd
 

@@ -79,7 +79,7 @@ in
 			--file "${ejabberdctl_cfg_path:?}" \
 			--delimiter '=' --exact_delimiter \
 			--key 'ERL_EPMD_ADDRESS' --value "${interface:?}" \
-			--onchange "${ejabberd_stop_cmd}; epmd -kill || :; ${ejabberd_start_cmd}"
+			--onchange "set +e; ${ejabberd_stop_cmd}; epmd -kill; ${ejabberd_start_cmd}"
 		;;
 esac
 

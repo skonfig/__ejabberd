@@ -1,6 +1,11 @@
 # shellcheck disable=SC2034
 
 os=$(cat "${__global:?}/explorer/os")
+init=$(cat "${__global:?}/explorer/init")
+
+ejabberd_start_cmd='ejabberdctl start && ejabberdctl started'
+ejabberd_stop_cmd='ejabberdctl status >/dev/null && { ejabberdctl stop; ejabberdctl stopped; } || :'
+ejabberd_restart_cmd="${ejabberd_stop_cmd} ; ${ejabberd_start_cmd}"
 
 case ${os}
 in
@@ -12,6 +17,20 @@ in
 		data_directory=/var/lib/ejabberd
 
 		service_name=ejabberd
+
+		case ${init}
+		in
+			(systemd)
+				ejabberd_start_cmd="systemctl start ${service_name:?}"
+				ejabberd_stop_cmd="systemctl stop ${service_name:?}"
+				ejabberd_restart_cmd="systemctl restart ${service_name:?}"
+				;;
+			(*)
+				ejabberd_start_cmd="/etc/init.d/${service_name:?} start"
+				ejabberd_stop_cmd="/etc/init.d/${service_name:?} stop"
+				ejabberd_restart_cmd="/etc/init.d/${service_name:?} restart"
+				;;
+		esac
 		;;
 	(*)
 		: "${__type:?}"  # make shellcheck happy
@@ -20,7 +39,3 @@ in
 		exit 1
 		;;
 esac
-
-ejabberd_stop_cmd='ejabberdctl status >/dev/null && { ejabberdctl stop; ejabberdctl stopped; } || :'
-ejabberd_start_cmd='ejabberdctl start && ejabberdctl started'
-ejabberd_restart_cmd="${ejabberd_stop_cmd} ; ${ejabberd_start_cmd}"

@@ -43,8 +43,31 @@ EXAMPLES
 
 .. code-block:: sh
 
-   # TODO
-   __ejabberd_server
+   # Install ejabberd using the configuration from ~/.skonfig/files/ejabberd.yml
+   __ejabberd_server \
+      --config-source "${__files:?}/ejabberd.yml"
+
+
+   # Install ejabberd from the Debian backports repository
+   __apt_backports
+
+   read -r lsb_codename _ <"${__global:?}/explorer/lsb_codename"
+
+   require=__apt_backports/ \
+   __apt_pin erlang-backports \
+      --package 'erlang*' \
+      --distribution "${lsb_codename:?}-backports" \
+      --priority 600
+
+   require=__apt_backports/ \
+   __apt_pin ejabberd-backports \
+      --package 'ejabberd*' \
+      --distribution "${lsb_codename:?}-backports" \
+      --priority 600
+
+   require='__apt_pin/erlang-backports __apt_pin/ejabberd-backports' \
+   __ejabberd_server \
+      --config-source "${__files:?}/ejabberd.yml"
 
 
 SEE ALSO
@@ -54,12 +77,12 @@ SEE ALSO
 
 AUTHORS
 -------
-Dennis Camera <dennis.camera--@--ssrq-sds-fds.ch>
+Dennis Camera <dennis.camera--@--riiengineering.ch>
 
 
 COPYING
 -------
-Copyright \(C) 2022 Dennis Camera.
+Copyright \(C) 2022-2023 Dennis Camera.
 You can redistribute it and/or modify it under the terms of the GNU General
 Public License as published by the Free Software Foundation, either version 3 of
 the License, or (at your option) any later version.

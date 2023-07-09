@@ -35,6 +35,7 @@ in
 
 		ejabberd_require=${ejabberd_require-}${ejabberd_require:+ }__package_apt/ejabberd
 
+		CDIST_OVERRIDE=true \
 		require=__package_apt/ejabberd \
 		__directory /etc/ejabberd \
 			--owner 0 --group ejabberd --mode 0750

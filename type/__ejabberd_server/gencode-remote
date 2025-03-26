@@ -41,7 +41,7 @@ fi
 if test -n "${erl_node_is}" -a "${erl_node_is}" != "${erl_node_should}"
 then
 	printf \
-		'failure: the current Erlang node name is "%s", but should be "%s".\nThis process is currently not automated, please follow https://docs.ejabberd.im/admin/guide/managing/#change-computer-hostname manually, update %s and re-run cdist.' \
+		'failure: the current Erlang node name is "%s", but should be "%s".\nThis process is currently not automated, please follow https://docs.ejabberd.im/admin/guide/managing/#change-computer-hostname manually, update %s and re-run skonfig.' \
 		"${erl_node_is}" "${erl_node_should}" \
 		"${ejabberdctl_cfg_path:?}" >&2
 	exit 1

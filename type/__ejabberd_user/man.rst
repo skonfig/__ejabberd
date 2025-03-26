@@ -8,7 +8,7 @@ cdist-type__ejabberd_user - Manage XMPP accounts in ejabberd.
 
 DESCRIPTION
 -----------
-This cdist type can be used to register or unregister XMPP accounts in ejabberd.
+This type can be used to register or unregister XMPP accounts in ejabberd.
 
 Please note that changing passwords is only supported if
 `mod_admin_extra <https://docs.ejabberd.im/admin/configuration/modules/#mod-admin-extra>`_
